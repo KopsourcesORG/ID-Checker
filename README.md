@@ -31,9 +31,12 @@ Android NDK and run:
 ANDROID_NDK_HOME=/path/to/ndk make android-binaries
 ```
 
-The default ABI is `arm64-v8a` with API level 23. Set `ANDROID_ABI` to
-`armeabi-v7a`, `x86`, or `x86_64` and `ANDROID_API` as needed. Output binaries
-are placed under `build/android/<abi>/`. `make` builds these automatically when
+The native target is `arm64-v8a` with API level 23. Output binaries are placed
+under `build/android/arm64-v8a/`. `make` builds these automatically when
 `ANDROID_NDK_HOME` is set. The standalone Android app project is in `android/`
 and writes the generated keys to the device's Downloads collection; its APK is
 built automatically when Gradle and an Android SDK platform are installed.
+
+## License
+
+This project is licensed under GNU GPL version 3 only. See [LICENSE](LICENSE).

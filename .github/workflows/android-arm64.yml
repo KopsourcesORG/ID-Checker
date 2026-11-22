@@ -1,0 +1,53 @@
+name: Android arm64
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build and test host utilities
+        run: make clean all test VERSION=0.1.0
+
+      - name: Set up Android SDK tools
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager --install "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
+
+      - name: Cross-compile arm64 Android binaries
+        run: make android-binaries VERSION=0.1.0
+
+      - name: Verify Android ELF architecture
+        run: |
+          readelf -h build/android/arm64-v8a/id-checker | grep -q 'Machine:.*AArch64'
+          readelf -h build/android/arm64-v8a/id-key-generator | grep -q 'Machine:.*AArch64'
+          readelf -h build/android/arm64-v8a/id-key-flasher | grep -q 'Machine:.*AArch64'
+
+      - name: Smoke-test key generation
+        run: |
+          mkdir -p build/smoke
+          cd build/smoke
+          ../id-key-generator -id 1772609505
+          test -s id.ike
+          test -s id.ike2
+          test "$(wc -c < id.ike)" -eq 96
+          test "$(wc -c < id.ike2)" -eq 128
+
+      - name: Upload Android arm64 binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: id-checker-android-arm64
+          path: build/android/arm64-v8a/
+          if-no-files-found: error

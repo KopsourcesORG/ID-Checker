@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
 #ifndef IDC_COMMON_H
 #define IDC_COMMON_H
 

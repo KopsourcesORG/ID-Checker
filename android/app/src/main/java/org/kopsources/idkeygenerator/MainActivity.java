@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package org.kopsources.idkeygenerator;
 
 import android.app.Activity;

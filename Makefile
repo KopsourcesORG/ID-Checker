@@ -5,8 +5,7 @@ CFLAGS ?= -O2 -Wall -Wextra -Wpedantic
 CPPFLAGS += -DIDC_VERSION=\"$(VERSION)\" -DIDC_GIT_HASH=\"$(GIT_HASH)\"
 LDLIBS ?=
 NDK_ROOT ?= $(ANDROID_NDK_HOME)
-NDK_HOST_TAG ?= linux-aarch64
-ANDROID_ABI ?= arm64-v8a
+NDK_HOST_TAG ?= linux-x86_64
 ANDROID_API ?= 23
 
 COMMON = build/idc_common.o
@@ -29,16 +28,9 @@ android:
 android-binaries: | build
 	@test -n "$(NDK_ROOT)" || { echo "Set ANDROID_NDK_HOME to the Android NDK root." >&2; exit 2; }
 	@set -eu; \
-	case "$(ANDROID_ABI)" in \
-	  arm64-v8a) target=aarch64-linux-android ;; \
-	  armeabi-v7a) target=armv7a-linux-androideabi ;; \
-	  x86_64) target=x86_64-linux-android ;; \
-	  x86) target=i686-linux-android ;; \
-	  *) echo "Unsupported ANDROID_ABI: $(ANDROID_ABI)" >&2; exit 2 ;; \
-	esac; \
-	compiler="$(NDK_ROOT)/toolchains/llvm/prebuilt/$(NDK_HOST_TAG)/bin/$${target}$(ANDROID_API)-clang"; \
+	compiler="$(NDK_ROOT)/toolchains/llvm/prebuilt/$(NDK_HOST_TAG)/bin/aarch64-linux-android$(ANDROID_API)-clang"; \
 	test -x "$$compiler" || { echo "Android compiler not found: $$compiler" >&2; exit 2; }; \
-	out="build/android/$(ANDROID_ABI)"; mkdir -p "$$out"; \
+	out="build/android/arm64-v8a"; mkdir -p "$$out"; \
 	for pair in "id-checker:src/id_checker.c" "id-key-generator:src/id_key_generator.c" "id-key-flasher:src/id_key_flasher.c"; do \
 		name=$${pair%%:*}; source=$${pair#*:}; \
 		"$$compiler" -DIDC_VERSION=\"$(VERSION)\" -DIDC_GIT_HASH=\"$(GIT_HASH)\" \
