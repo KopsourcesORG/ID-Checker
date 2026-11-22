@@ -1,0 +1,27 @@
+# ID Checker
+
+Small C utilities for generating and installing a board-ID key and checking it
+against `/sys/devices/soc0/serial_number`.
+
+On a mismatch, ID Checker creates `/sdcard/Warning` for ROM features to inspect.
+It does not reboot, block startup, or show a prompt. The file is removed after a
+successful check. Device init/service integration is intentionally left to the
+ROM maintainer, so the behavior and recovery path remain visible and controllable.
+
+The file format is a transport encoding, not encryption or tamper-proofing.
+Do not treat a local marker file or SHA-256 comparison as a secure DRM boundary:
+users with system access can alter either. This project does not obfuscate its
+binaries.
+
+## Build
+
+Requires a C compiler, Make, and OpenSSL development headers/libraries.
+
+```sh
+make VERSION=0.1.0
+make test
+```
+
+Targets are `build/id-checker`, `build/id-key-generator`, and
+`build/id-key-flasher`. Android builds can use the NDK by setting `CC` and
+appropriate `CFLAGS`/`LDFLAGS`.
