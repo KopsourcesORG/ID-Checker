@@ -47,11 +47,9 @@ public final class MainActivity extends Activity {
         inputParams.topMargin = dp(16);
         root.addView(boardId, inputParams);
 
-        Button generate = new Button(this);
-        generate.setText("Generate flashable ZIP");
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(-1, -2);
-        buttonParams.topMargin = dp(8);
-        root.addView(generate, buttonParams);
+        Button generateIke = addButton(root, "Generate id.ike");
+        Button generateIke2 = addButton(root, "Generate id.ike2");
+        Button generateZip = addButton(root, "Generate flashable ZIP");
 
         status = new TextView(this);
         status.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
@@ -59,26 +57,60 @@ public final class MainActivity extends Activity {
         statusParams.topMargin = dp(8);
         root.addView(status, statusParams);
 
-        generate.setOnClickListener(view -> generateKeys());
+        generateIke.setOnClickListener(view -> generateKeyFile(1, "id.ike"));
+        generateIke2.setOnClickListener(view -> generateKeyFile(2, "id.ike2"));
+        generateZip.setOnClickListener(view -> generateFlashableZip());
         setContentView(root, new ViewGroup.LayoutParams(-1, -1));
     }
 
-    private void generateKeys() {
+    private Button addButton(LinearLayout root, String label) {
+        Button button = new Button(this);
+        button.setText(label);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.topMargin = dp(4);
+        root.addView(button, params);
+        return button;
+    }
+
+    private byte[] createKeyFile(int encodingLayers) throws Exception {
         String id = boardId.getText().toString().trim();
-        if (id.isEmpty()) {
-            status.setText("Enter a mainboard ID.");
-            return;
-        }
+        if (id.isEmpty()) throw new IllegalArgumentException("Enter a mainboard ID.");
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(id.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hex = new StringBuilder(64);
+        for (byte value : digest) hex.append(String.format(java.util.Locale.ROOT, "%02x", value & 0xff));
+        byte[] encoded = ("IDC1\n" + hex + "\n").getBytes(StandardCharsets.US_ASCII);
+        for (int i = 0; i < encodingLayers; i++) encoded = Base64.getEncoder().encode(encoded);
+        return encoded;
+    }
+
+    private void generateKeyFile(int layers, String name) {
         try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(id.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(64);
-            for (byte value : digest) hex.append(String.format(java.util.Locale.ROOT, "%02x", value & 0xff));
-            byte[] plain = ("IDC1\n" + hex + "\n").getBytes(StandardCharsets.US_ASCII);
-            byte[] ike2 = Base64.getEncoder().encode(Base64.getEncoder().encode(plain));
-            saveFlashableZip(ike2);
+            saveDownload(name, createKeyFile(layers));
+            status.setText("Saved " + name + " to Downloads.");
+        } catch (Exception e) {
+            status.setText(e instanceof IllegalArgumentException ? e.getMessage() : "Could not create " + name + ".");
+        }
+    }
+
+    private void generateFlashableZip() {
+        try {
+            saveFlashableZip(createKeyFile(2));
             status.setText("Saved flashable ZIP to Downloads.");
         } catch (Exception e) {
-            status.setText("Could not create flashable ZIP.");
+            status.setText(e instanceof IllegalArgumentException ? e.getMessage() : "Could not create flashable ZIP.");
+        }
+    }
+
+    private void saveDownload(String name, byte[] contents) throws Exception {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Downloads.DISPLAY_NAME, name);
+        values.put(MediaStore.Downloads.MIME_TYPE, "application/octet-stream");
+        values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+        android.net.Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+        if (uri == null) throw new java.io.IOException("Could not create download");
+        try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+            if (out == null) throw new java.io.IOException("No output stream");
+            out.write(contents);
         }
     }
 
