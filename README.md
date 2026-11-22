@@ -2,11 +2,7 @@
 
 Small C utilities for generating and installing a board-ID key and checking it
 against `/sys/devices/soc0/serial_number`.
-
-On a mismatch, ID Checker creates `/sdcard/Warning` for ROM features to inspect.
-It does not reboot, block startup, or show a prompt. The file is removed after a
-successful check. Device init/service integration is intentionally left to the
-ROM maintainer, so the behavior and recovery path remain visible and controllable.
+On a mismatch, ID Checker will reboot device into fastboot.
 
 The file format is a transport encoding, not encryption or tamper-proofing.
 Do not treat a local marker file or SHA-256 comparison as a secure DRM boundary:

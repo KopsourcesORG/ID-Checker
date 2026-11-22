@@ -2,9 +2,11 @@
 #define _POSIX_C_SOURCE 200809L
 #include "idc_common.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #ifndef IDC_VERSION
@@ -14,32 +16,55 @@
 #define IDC_GIT_HASH "unknown"
 #endif
 
+#define SHELL_PATH "/system/bin/sh"
+
 static const char *key_paths[] = { "/persist/idc/id.ike", "/mnt/vendor/persist/idc/id.ike" };
 static const char *board_path = "/sys/devices/soc0/serial_number";
-static const char *warning_path = "/sdcard/Warning";
+
+static int run_shell(const char *cmd) {
+    pid_t pid;
+    int status;
+
+    if (cmd == NULL) return -1;
+
+    pid = fork();
+    if (pid < 0) return -1;
+    if (pid == 0) {
+        execl(SHELL_PATH, "sh", "-c", cmd, (char *)NULL);
+        _exit(127);
+    }
+    while (waitpid(pid, &status, 0) < 0) {
+        if (errno != EINTR) return -1;
+    }
+    if (!WIFEXITED(status)) return -1;
+    return WEXITSTATUS(status);
+}
 
 int main(int argc, char **argv) {
     unsigned char *encoded = NULL, *decoded = NULL;
     size_t encoded_len = 0, decoded_len = 0, i;
     char expected[65], actual[65], *board_id = NULL;
     int found = 0, valid = 0;
+
     if (argc == 2 && strcmp(argv[1], "-v") == 0) {
         printf("ID Checker v%s-g%s \xc2\xa9Kopsources.ORG\n", IDC_VERSION, IDC_GIT_HASH);
         return 0;
     }
+
     for (i = 0; i < sizeof(key_paths) / sizeof(key_paths[0]); i++) {
         if (idc_read_file(key_paths[i], &encoded, &encoded_len) == 0) { found = 1; break; }
     }
+
     if (found && idc_base64_decode(encoded, encoded_len, &decoded, &decoded_len) == 0 &&
         idc_extract_digest(decoded, decoded_len, expected) == 0 &&
         idc_read_board_id(board_path, &board_id) == 0 &&
         idc_sha256_hex((const unsigned char *)board_id, strlen(board_id), actual) == 0 &&
         strcmp(expected, actual) == 0) valid = 1;
-    if (valid) unlink(warning_path);
-    else {
-        FILE *marker = fopen(warning_path, "ab");
-        if (marker) fclose(marker);
+
+    if (!valid) {
+        (void)run_shell("reboot bootloader");
     }
+
     free(encoded);
     free(decoded);
     free(board_id);
