@@ -7,7 +7,7 @@ LDLIBS += -lcrypto
 
 COMMON = build/idc_common.o
 
-.PHONY: all clean test android android-if-available
+.PHONY: all clean test android android-if-available FORCE
 all: build/id-checker build/id-key-generator build/id-key-flasher android-if-available
 
 android-if-available:
@@ -26,8 +26,8 @@ build:
 build/idc_common.o: src/idc_common.c src/idc_common.h | build
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-build/id-checker: src/id_checker.c $(COMMON)
-	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDLIBS) -o $@
+build/id-checker: src/id_checker.c $(COMMON) FORCE
+	$(CC) $(CPPFLAGS) $(CFLAGS) src/id_checker.c $(COMMON) $(LDLIBS) -o $@
 
 build/id-key-generator: src/id_key_generator.c $(COMMON)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDLIBS) -o $@
@@ -41,3 +41,5 @@ test: all
 
 clean:
 	rm -rf build
+
+FORCE:
