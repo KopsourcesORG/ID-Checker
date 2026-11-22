@@ -33,13 +33,13 @@ android-binaries: | build
 	out="build/android/arm64-v8a"; mkdir -p "$$out"; \
 	for pair in "id-checker:src/id_checker.c" "id-key-generator:src/id_key_generator.c" "id-key-flasher:src/id_key_flasher.c"; do \
 		name=$${pair%%:*}; source=$${pair#*:}; \
-		if test "$$name" = id-key-flasher; then \
-			link_mode='-static -Wl,-z,max-page-size=65536'; \
+		if test "$$name" = id-key-flasher; then link_mode=-static; \
 		else link_mode=; fi; \
 		"$$compiler" -DIDC_VERSION=\"$(VERSION)\" -DIDC_GIT_HASH=\"$(GIT_HASH)\" \
 			$$link_mode -O2 -Wall -Wextra -Wpedantic \
 			src/idc_common.c "$$source" -o "$$out/$$name"; \
-	done
+	done; \
+	python3 tools/align_android_tls.py "$$out/id-key-flasher"
 
 build:
 	mkdir -p $@
@@ -59,6 +59,7 @@ build/id-key-flasher: src/id_key_flasher.c $(COMMON)
 test: all
 	$(CC) -Isrc $(CPPFLAGS) $(CFLAGS) tests/test_common.c $(COMMON) $(LDLIBS) -o build/test-common
 	./build/test-common
+	python3 tests/test_align_android_tls.py
 
 clean:
 	rm -rf build
