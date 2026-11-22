@@ -47,13 +47,16 @@ jobs:
         run: make android-binaries
 
       - name: Build Android app
-        run: gradle --no-daemon -p android assembleDebug
+        run: make android-apk
 
       - name: Verify Android APK
         run: |
           APK=android/app/build/outputs/apk/debug/app-debug.apk
+          EXPECTED_VERSION="$(make -s print-app-version)"
           test -s "$APK"
-          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK" | grep -q "package: name='org.kopsources.idkeygenerator'"
+          BADGING=$("$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$APK")
+          printf '%s\n' "$BADGING" | grep -q "package: name='org.kopsources.idkeygenerator'"
+          printf '%s\n' "$BADGING" | grep -q "versionName='$EXPECTED_VERSION'"
           unzip -l "$APK" | grep -q 'assets/id-key-flasher'
           unzip -l "$APK" | grep -q 'assets/META-INF/com/google/android/update-binary'
           unzip -l "$APK" | grep -q 'assets/META-INF/com/google/android/updater-script'

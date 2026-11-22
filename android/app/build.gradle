@@ -3,6 +3,8 @@ plugins {
 }
 
 def idkeyGeneratedAssets = file("$buildDir/generated/idkey-assets")
+def appVersion = providers.gradleProperty('appVersion').getOrElse('0.0.0')
+def gitHash = providers.gradleProperty('gitHash').getOrElse('unknown')
 
 android {
     namespace 'org.kopsources.idkeygenerator'
@@ -13,7 +15,7 @@ android {
         minSdk 29
         targetSdk 36
         versionCode 1
-        versionName '0.1.0'
+        versionName "${appVersion}-g${gitHash}"
     }
 
     sourceSets {

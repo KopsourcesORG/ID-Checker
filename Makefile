@@ -10,7 +10,7 @@ ANDROID_API ?= 23
 
 COMMON = build/idc_common.o
 
-.PHONY: all clean test android android-binaries android-if-available FORCE
+.PHONY: all clean test android android-apk android-binaries android-if-available print-app-version FORCE
 all: build/id-checker build/id-key-generator build/id-key-flasher android-if-available
 
 android-if-available:
@@ -22,8 +22,13 @@ android-if-available:
 		echo "Android APK build skipped (NDK, Gradle, and Android SDK platform are required)."; \
 	fi
 
-android: android-binaries
-	cd android && gradle --no-daemon assembleDebug
+android: android-apk
+
+android-apk: android-binaries
+	cd android && gradle --no-daemon -PappVersion="$(VERSION)" -PgitHash="$(GIT_HASH)" assembleDebug
+
+print-app-version:
+	@printf '%s-g%s\n' '$(VERSION)' '$(GIT_HASH)'
 
 android-binaries: | build
 	@test -n "$(NDK_ROOT)" || { echo "Set ANDROID_NDK_HOME to the Android NDK root." >&2; exit 2; }
