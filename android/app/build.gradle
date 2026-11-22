@@ -13,4 +13,28 @@ android {
         versionCode 1
         versionName '0.1.0'
     }
+
+    sourceSets {
+        main {
+            assets.srcDir('../../flashable')
+            assets.srcDir(layout.buildDirectory.dir('generated/idkey-assets'))
+        }
+    }
+}
+
+tasks.register('prepareIdKeyFlasher', Copy) {
+    def flasher = rootProject.projectDir.parentFile.toPath()
+        .resolve('build/android/arm64-v8a/id-key-flasher').toFile()
+    from(flasher)
+    into(layout.buildDirectory.dir('generated/idkey-assets'))
+    rename { 'id-key-flasher' }
+    doFirst {
+        if (!flasher.isFile()) {
+            throw new GradleException('Missing build/android/arm64-v8a/id-key-flasher; run make android-binaries first.')
+        }
+    }
+}
+
+tasks.named('preBuild').configure {
+    dependsOn tasks.named('prepareIdKeyFlasher')
 }

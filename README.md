@@ -32,6 +32,9 @@ under `build/android/arm64-v8a/`. `make` builds these automatically when
 `ANDROID_NDK_HOME` is set. The standalone Android app project is in `android/`
 and writes the generated keys to the device's Downloads collection; its APK is
 built automatically when Gradle and an Android SDK platform are installed.
+The app creates a recovery-flashable ZIP containing the key, the installer
+scripts from `flashable/`, and the arm64 `id-key-flasher` compiled by
+`make android-binaries` before the APK build.
 
 ## License
 

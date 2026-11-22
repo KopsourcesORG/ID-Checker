@@ -16,13 +16,13 @@ all: build/id-checker build/id-key-generator build/id-key-flasher android-if-ava
 android-if-available:
 	@if test -n "$(NDK_ROOT)"; then $(MAKE) android-binaries; \
 	else echo "Android native build skipped (set ANDROID_NDK_HOME to an installed NDK)."; fi
-	@if command -v gradle >/dev/null 2>&1 && test -d "$${ANDROID_HOME:-/usr/lib/android-sdk}/platforms"; then \
-		$(MAKE) android; \
+	@if test -n "$(NDK_ROOT)" && command -v gradle >/dev/null 2>&1 && test -d "$${ANDROID_HOME:-/usr/lib/android-sdk}/platforms"; then \
+		$(MAKE) android NDK_ROOT="$(NDK_ROOT)"; \
 	else \
-		echo "Android APK build skipped (Gradle and Android SDK platform are required)."; \
+		echo "Android APK build skipped (NDK, Gradle, and Android SDK platform are required)."; \
 	fi
 
-android:
+android: android-binaries
 	cd android && gradle --no-daemon assembleDebug
 
 android-binaries: | build

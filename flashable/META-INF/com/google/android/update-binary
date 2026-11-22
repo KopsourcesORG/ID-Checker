@@ -1,0 +1,27 @@
+# ID Key Flasher Shell (flashable zip package)
+# By KeJia
+
+# env prepare
+umask 022
+TMPDIR=/tmp/idc
+rm -rf "$TMPDIR" 2>/dev/null
+mkdir -p "$TMPDIR" || exit 1
+OUTFD=$2
+ZIPFILE=$3
+abort() {
+  ui_print "$1"
+  rm -rf "$TMPDIR"
+  exit 1
+}
+
+# extract files
+unzip "$ZIPFILE" -d "$TMPDIR" >&2 || abort "Could not extract installer files"
+
+# run id-key-flasher
+chmod 0755 "$TMPDIR/id-key-flasher" || abort "Could not prepare ID Key Flasher"
+"$TMPDIR/id-key-flasher" "$TMPDIR/id.ike2" || abort "Could not install ID key"
+
+# clean up
+cd /
+rm -rf "$TMPDIR"
+exit 0
