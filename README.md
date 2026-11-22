@@ -39,8 +39,10 @@ scripts from `flashable/`, and the arm64 `id-key-flasher` compiled by
 `id-key-flasher` is linked statically for recovery compatibility, so TWRP does
 not need to provide Android's `/system/bin/linker64` or userspace libraries.
 The NDK linker currently emits an undersized AArch64 TLS alignment, so the
-build validates and corrects the `PT_TLS` alignment after linking. Use the
-binary from `build/android/arm64-v8a/`, not the host-only executable in `build/`.
+build validates and corrects the `PT_TLS` alignment after linking. The flasher
+checks `/proc/mounts`, mounts an available persist path when needed, then writes
+the key. Use the binary from `build/android/arm64-v8a/`, not the host-only
+executable in `build/`.
 
 ## License
 
