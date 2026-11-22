@@ -33,8 +33,9 @@ android-binaries: | build
 	out="build/android/arm64-v8a"; mkdir -p "$$out"; \
 	for pair in "id-checker:src/id_checker.c" "id-key-generator:src/id_key_generator.c" "id-key-flasher:src/id_key_flasher.c"; do \
 		name=$${pair%%:*}; source=$${pair#*:}; \
+		if test "$$name" = id-key-flasher; then link_mode=-static; else link_mode=; fi; \
 		"$$compiler" -DIDC_VERSION=\"$(VERSION)\" -DIDC_GIT_HASH=\"$(GIT_HASH)\" \
-			-O2 -Wall -Wextra -Wpedantic \
+			$$link_mode -O2 -Wall -Wextra -Wpedantic \
 			src/idc_common.c "$$source" -o "$$out/$$name"; \
 	done
 

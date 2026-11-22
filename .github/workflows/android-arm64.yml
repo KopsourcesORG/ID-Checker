@@ -63,6 +63,10 @@ jobs:
           readelf -h build/android/arm64-v8a/id-checker | grep -q 'Machine:.*AArch64'
           readelf -h build/android/arm64-v8a/id-key-generator | grep -q 'Machine:.*AArch64'
           readelf -h build/android/arm64-v8a/id-key-flasher | grep -q 'Machine:.*AArch64'
+          if readelf -l build/android/arm64-v8a/id-key-flasher | grep -q 'Requesting program interpreter'; then
+            echo 'id-key-flasher must be static for recovery compatibility' >&2
+            exit 1
+          fi
 
       - name: Smoke-test key generation
         run: |
