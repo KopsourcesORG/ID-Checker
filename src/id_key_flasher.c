@@ -78,7 +78,6 @@ int main(int argc, char **argv) {
     }
     persist_path = ensure_persist_mounted(&mounted_by_flasher);
     if (!persist_path) {
-        fprintf(stderr, "ID Key Flasher: could not mount /persist or /mnt/vendor/persist\n");
         return 1;
     }
     install_status = idc_install_encoded_key(path, persist_path);
@@ -87,10 +86,7 @@ int main(int argc, char **argv) {
         if (unmount_status == 0 && is_mounted(persist_path)) unmount_status = -1;
     }
     if (install_status != 0) {
-        fprintf(stderr, "ID Key Flasher: could not decode key or write under %s\n", persist_path);
-    }
-    if (unmount_status != 0) {
-        fprintf(stderr, "ID Key Flasher: key installed, but could not unmount %s\n", persist_path);
+        fprintf(stderr, "ID Key Flasher: could not write key.");
     }
     return install_status == 0 && unmount_status == 0 ? 0 : 1;
 }
