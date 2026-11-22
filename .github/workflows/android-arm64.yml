@@ -18,12 +18,26 @@ jobs:
       - name: Build and test host utilities
         run: make clean all test VERSION=0.1.0
 
-      - name: Set up Android SDK tools
-        uses: android-actions/setup-android@v3
+      - name: Accept SDK licenses
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          "$SDKMANAGER" --licenses <<'EOF'
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          y
+          EOF
 
       - name: Install Android NDK
         run: |
-          sdkmanager --install "ndk;27.2.12479018"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.2.12479018"
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - name: Cross-compile arm64 Android binaries
