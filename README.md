@@ -15,7 +15,8 @@ binaries.
 
 ## Build
 
-Requires a C compiler, Make, and OpenSSL development headers/libraries.
+Host builds require a C compiler and Make. The C binaries have no runtime
+dependency beyond the platform C library.
 
 ```sh
 make VERSION=0.1.0
@@ -23,7 +24,16 @@ make test
 ```
 
 Targets are `build/id-checker`, `build/id-key-generator`, and
-`build/id-key-flasher`. `make` also builds the Android APK when Gradle and an
-Android SDK platform are installed; otherwise it prints a skip message. The
-standalone app project is in `android/` and writes the generated keys to the
-device's Downloads collection.
+`build/id-key-flasher`. To cross-compile Android shell executables, install the
+Android NDK and run:
+
+```sh
+ANDROID_NDK_HOME=/path/to/ndk make android-binaries
+```
+
+The default ABI is `arm64-v8a` with API level 23. Set `ANDROID_ABI` to
+`armeabi-v7a`, `x86`, or `x86_64` and `ANDROID_API` as needed. Output binaries
+are placed under `build/android/<abi>/`. `make` builds these automatically when
+`ANDROID_NDK_HOME` is set. The standalone Android app project is in `android/`
+and writes the generated keys to the device's Downloads collection; its APK is
+built automatically when Gradle and an Android SDK platform are installed.
