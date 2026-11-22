@@ -67,6 +67,10 @@ jobs:
             echo 'id-key-flasher must be static for recovery compatibility' >&2
             exit 1
           fi
+          read -r tls_vaddr tls_align <<< "$(readelf -lW build/android/arm64-v8a/id-key-flasher | awk '$1 == "TLS" { print $3, $NF }')"
+          test -n "$tls_vaddr"
+          test "$((tls_align))" -ge 64
+          test "$((tls_vaddr % tls_align))" -eq 0
 
       - name: Smoke-test key generation
         run: |

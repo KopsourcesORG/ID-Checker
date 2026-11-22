@@ -3,7 +3,15 @@
 
 #include <stdio.h>
 
+#if defined(__aarch64__)
+static __thread volatile unsigned char recovery_tls_alignment
+    __attribute__((aligned(64)));
+#endif
+
 int main(int argc, char **argv) {
+#if defined(__aarch64__)
+    recovery_tls_alignment = 0;
+#endif
     const char *path = argc > 1 ? argv[1] : "id.ike2";
     if (argc > 2) {
         fprintf(stderr, "Usage: %s [id.ike2]\n", argv[0]);
