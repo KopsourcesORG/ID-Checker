@@ -67,10 +67,21 @@ jobs:
             echo 'id-key-flasher must be static for recovery compatibility' >&2
             exit 1
           fi
-          read -r tls_vaddr tls_align <<< "$(readelf -lW build/android/arm64-v8a/id-key-flasher | awk '$1 == "TLS" { print $3, $NF }')"
-          test -n "$tls_vaddr"
-          test "$((tls_align))" -ge 64
-          test "$((tls_vaddr % tls_align))" -eq 0
+          tls_segment=$(readelf -lW build/android/arm64-v8a/id-key-flasher | awk '$1 == "TLS" { print $3, $NF; found=1 } END { if (!found) exit 1 }') || {
+            readelf -lW build/android/arm64-v8a/id-key-flasher
+            echo 'id-key-flasher has no PT_TLS segment' >&2
+            exit 1
+          }
+          read -r tls_vaddr tls_align <<< "$tls_segment"
+          echo "id-key-flasher PT_TLS: vaddr=$tls_vaddr align=$tls_align"
+          if (( tls_align < 64 )); then
+            echo 'id-key-flasher PT_TLS alignment must be at least 64 bytes' >&2
+            exit 1
+          fi
+          if (( tls_vaddr % tls_align != 0 )); then
+            echo 'id-key-flasher PT_TLS virtual address is not aligned' >&2
+            exit 1
+          fi
 
       - name: Smoke-test key generation
         run: |
@@ -84,9 +95,10 @@ jobs:
 
       - name: Upload Android arm64 binaries and APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: id-checker-android-arm64
           path: |
             build/android/arm64-v8a/
             android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          if-no-files-found: warn
