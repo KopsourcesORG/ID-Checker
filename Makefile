@@ -1,4 +1,4 @@
-VERSION ?= 0.1.0
+VERSION ?= 0.1.1
 GIT_HASH ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 CC ?= cc
 CFLAGS ?= -O2 -Wall -Wextra -Wpedantic
