@@ -31,12 +31,12 @@ static int is_mounted(const char *path) {
     return 0;
 }
 
-static int run_mount(const char *path) {
+static int run_command(const char *command, const char *path) {
     pid_t child = fork();
     int status;
     if (child < 0) return -1;
     if (child == 0) {
-        char *const args[] = { (char *)"mount", (char *)path, NULL };
+        char *const args[] = { (char *)command, (char *)path, NULL };
         execvp(args[0], args);
         _exit(127);
     }
@@ -46,20 +46,28 @@ static int run_mount(const char *path) {
     return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
 }
 
-static const char *ensure_persist_mounted(void) {
+static const char *ensure_persist_mounted(int *mounted_by_flasher) {
     static const char *paths[] = { "/persist", "/mnt/vendor/persist" };
     size_t i;
+    *mounted_by_flasher = 0;
     for (i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
         struct stat st;
+        int mount_status;
         if (stat(paths[i], &st) != 0 || !S_ISDIR(st.st_mode)) continue;
         if (is_mounted(paths[i])) return paths[i];
-        if (run_mount(paths[i]) == 0 && is_mounted(paths[i])) return paths[i];
+        mount_status = run_command("mount", paths[i]);
+        if (is_mounted(paths[i])) {
+            *mounted_by_flasher = (mount_status == 0);
+            return paths[i];
+        }
     }
     return NULL;
 }
 
 int main(int argc, char **argv) {
     const char *persist_path;
+    int mounted_by_flasher = 0;
+    int install_status, unmount_status = 0;
 #if defined(__aarch64__)
     recovery_tls_alignment = 0;
 #endif
@@ -68,14 +76,21 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Usage: %s [id.ike2]\n", argv[0]);
         return 2;
     }
-    persist_path = ensure_persist_mounted();
+    persist_path = ensure_persist_mounted(&mounted_by_flasher);
     if (!persist_path) {
         fprintf(stderr, "ID Key Flasher: could not mount /persist or /mnt/vendor/persist\n");
         return 1;
     }
-    if (idc_install_encoded_key(path) != 0) {
-        fprintf(stderr, "ID Key Flasher: could not decode key or write under %s\n", persist_path);
-        return 1;
+    install_status = idc_install_encoded_key(path, persist_path);
+    if (mounted_by_flasher && is_mounted(persist_path)) {
+        unmount_status = run_command("umount", persist_path);
+        if (unmount_status == 0 && is_mounted(persist_path)) unmount_status = -1;
     }
-    return 0;
+    if (install_status != 0) {
+        fprintf(stderr, "ID Key Flasher: could not decode key or write under %s\n", persist_path);
+    }
+    if (unmount_status != 0) {
+        fprintf(stderr, "ID Key Flasher: key installed, but could not unmount %s\n", persist_path);
+    }
+    return install_status == 0 && unmount_status == 0 ? 0 : 1;
 }

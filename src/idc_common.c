@@ -219,33 +219,22 @@ int idc_read_board_id(const char *path, char **board_id) {
     return 0;
 }
 
-int idc_install_encoded_key(const char *encoded_path) {
-    static const char *directories[] = { "/persist/idc", "/mnt/vendor/persist/idc" };
+int idc_install_encoded_key(const char *encoded_path, const char *persist_directory) {
     unsigned char *encoded = NULL, *decoded = NULL;
     size_t encoded_len = 0, decoded_len = 0;
-    size_t i;
     int result = -1;
+    struct stat st;
+    char destination[512];
     if (idc_read_file(encoded_path, &encoded, &encoded_len) != 0 ||
         idc_base64_decode(encoded, encoded_len, &decoded, &decoded_len) != 0) goto done;
-    for (i = 0; i < sizeof(directories) / sizeof(directories[0]); i++) {
-        struct stat st;
-        char destination[256];
-        char *slash = strrchr(directories[i], '/');
-        char root[128];
-        size_t root_len;
-        if (!slash) continue;
-        root_len = (size_t)(slash - directories[i]);
-        if (root_len >= sizeof(root)) continue;
-        memcpy(root, directories[i], root_len);
-        root[root_len] = '\0';
-        if (stat(root, &st) != 0 || !S_ISDIR(st.st_mode)) continue;
-        if (stat(directories[i], &st) != 0 && mkdir(directories[i], 0700) != 0) continue;
-        if (stat(directories[i], &st) != 0 || !S_ISDIR(st.st_mode)) continue;
-        if (snprintf(destination, sizeof(destination), "%s/id.ike", directories[i]) >= (int)sizeof(destination))
-            continue;
-        result = idc_write_file(destination, decoded, decoded_len);
-        if (result == 0) break;
-    }
+    if (stat(persist_directory, &st) != 0 || !S_ISDIR(st.st_mode)) goto done;
+    if (snprintf(destination, sizeof(destination), "%s/idc", persist_directory) >= (int)sizeof(destination))
+        goto done;
+    if (stat(destination, &st) != 0 && mkdir(destination, 0700) != 0) goto done;
+    if (stat(destination, &st) != 0 || !S_ISDIR(st.st_mode)) goto done;
+    if (snprintf(destination, sizeof(destination), "%s/idc/id.ike", persist_directory) >= (int)sizeof(destination))
+        goto done;
+    result = idc_write_file(destination, decoded, decoded_len);
 done:
     free(encoded);
     free(decoded);
