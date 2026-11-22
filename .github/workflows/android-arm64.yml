@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build and test host utilities
-        run: make clean all test VERSION=0.1.0
+        run: make clean all test
 
       - name: Accept SDK licenses
         run: |
@@ -44,7 +44,7 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - name: Cross-compile arm64 Android binaries
-        run: make android-binaries VERSION=0.1.0
+        run: make android-binaries
 
       - name: Build Android app
         run: gradle --no-daemon -p android assembleDebug
