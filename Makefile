@@ -7,8 +7,18 @@ LDLIBS += -lcrypto
 
 COMMON = build/idc_common.o
 
-.PHONY: all clean test
-all: build/id-checker build/id-key-generator build/id-key-flasher
+.PHONY: all clean test android android-if-available
+all: build/id-checker build/id-key-generator build/id-key-flasher android-if-available
+
+android-if-available:
+	@if command -v gradle >/dev/null 2>&1 && test -d "$${ANDROID_HOME:-/usr/lib/android-sdk}/platforms"; then \
+		$(MAKE) android; \
+	else \
+		echo "Android build skipped (Gradle and Android SDK platform are required)."; \
+	fi
+
+android:
+	cd android && gradle --no-daemon assembleDebug
 
 build:
 	mkdir -p $@

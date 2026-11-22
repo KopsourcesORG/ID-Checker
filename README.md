@@ -23,5 +23,7 @@ make test
 ```
 
 Targets are `build/id-checker`, `build/id-key-generator`, and
-`build/id-key-flasher`. Android builds can use the NDK by setting `CC` and
-appropriate `CFLAGS`/`LDFLAGS`.
+`build/id-key-flasher`. `make` also builds the Android APK when Gradle and an
+Android SDK platform are installed; otherwise it prints a skip message. The
+standalone app project is in `android/` and writes the generated keys to the
+device's Downloads collection.

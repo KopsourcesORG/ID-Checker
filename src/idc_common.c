@@ -126,6 +126,16 @@ int idc_install_encoded_key(const char *encoded_path) {
     for (i = 0; i < sizeof(directories) / sizeof(directories[0]); i++) {
         struct stat st;
         char destination[256];
+        char *slash = strrchr(directories[i], '/');
+        char root[128];
+        size_t root_len;
+        if (!slash) continue;
+        root_len = (size_t)(slash - directories[i]);
+        if (root_len >= sizeof(root)) continue;
+        memcpy(root, directories[i], root_len);
+        root[root_len] = '\0';
+        if (stat(root, &st) != 0 || !S_ISDIR(st.st_mode)) continue;
+        if (stat(directories[i], &st) != 0 && mkdir(directories[i], 0700) != 0) continue;
         if (stat(directories[i], &st) != 0 || !S_ISDIR(st.st_mode)) continue;
         if (snprintf(destination, sizeof(destination), "%s/id.ike", directories[i]) >= (int)sizeof(destination))
             continue;
